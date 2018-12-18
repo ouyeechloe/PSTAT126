@@ -1,0 +1,82 @@
+---
+title: "PSTAT 126 Final Project"
+subtitle: "Real Estate"
+date: "March 19, 2018"
+author: "Fady Naeim, Caitlyn Jue, Shireen Mann, Chloe Lam"
+output: pdf_document
+---
+\pagebreak
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+realestate=read.table("realestate.txt", header=TRUE)
+saleprice=realestate$SalePrice
+sqfeet=realestate$SqFeet
+beds=realestate$Beds
+baths=realestate$Baths
+garage=factor(realestate$Garage)
+pool=factor(realestate$Pool)
+lot=realestate$Lot
+```
+
+General test to see relationship between chosen predictors and the response.
+```{r}
+pairs(~saleprice+sqfeet+beds+baths)
+pairs(~saleprice+garage+pool+lot)
+fitfirst=lm(saleprice~sqfeet+beds+baths+garage+pool+lot)
+summary(fitfirst)
+```
+```{r}
+fit0=lm(saleprice~1, data=realestate)
+add1(fit0, ~.+sqfeet+beds+baths+garage+pool+lot, test='F')
+
+fit1= update(fit0, ~.+sqfeet, data=realestate)
+add1(fit1, ~.+beds+baths+garage, test='F')
+
+fit2= update(fit1, ~.+garage)
+#summary(fit2) Check if adding garage to sqfeet will change p-value of sqfeet
+add1(fit2, ~.+beds+baths, test='F')
+
+fit3= update(fit2, ~.+baths)
+#summary(fit3) We see that adding baths to garage does make garage less significant but it is still signficant under alpha level of 0.05
+add1(fit3, ~.+beds, test='F')
+
+fit.final=lm(saleprice~sqfeet+garage+baths+beds)
+summary(fit.final)
+```
+
+```{r}
+mod0=lm(saleprice~1)
+mod.upper=lm(saleprice~sqfeet+beds+baths+garage+pool+lot)
+step(mod0,scope=list(lower=mod0, upper=mod.upper))
+mod.final=lm(saleprice~sqfeet+garage+baths+lot+beds)
+summary(mod.final)
+```
+
+```{r}
+library(leaps)
+mod=regsubsets(cbind(sqfeet,beds,baths,garage,pool,lot),saleprice)
+summary.mod=summary(mod)
+n=521
+rss=summary.mod$rss
+mses=c(rss[1]/(n-2),rss[2]/(n-3),rss[3]/(n-4),rss[4]/(n-5),rss[5]/(n-6))
+mses
+summary.mod$rsq
+summary.mod$adjr2
+summary.mod$which
+```
+
+```{r}
+final1=lm(saleprice~sqfeet+garage+baths+beds+lot)
+summary(final1)
+```
+
+```{r}
+final=lm(log(saleprice)~log(sqfeet)+garage+log(baths)+beds+lot)
+plot(final)
+summary(final)
+```
+
